@@ -347,17 +347,16 @@ async def _process_future_exceptions(tasks, raise_at_first_error):
     error_results = []
 
     if tasks:
-        await asyncio.wait(tasks)
-        for task in tasks:
-            exc = task.exception()
-            if exc is None:
-                succeeded_results.append(task.result())
-            else:
-                if raise_at_first_error:
-                    raise exc
-                else:
-                    log.warn('Async task failed with error: {}'.format(exc))
-                    error_results.append(exc)
+        results = await asyncio.gather(*tasks,
+                                       return_exceptions=not raise_at_first_error)
+        succeeded_results.extend(
+            [result for result in results if not isinstance(result, Exception)]
+        )
+        error_results.extend(
+            [result for result in results if isinstance(result, Exception)]
+        )
+        for exc in error_results:
+            log.warn('Async task failed with error: {}'.format(exc))
 
     return succeeded_results, error_results
 
