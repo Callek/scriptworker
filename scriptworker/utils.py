@@ -18,6 +18,7 @@ import random
 import re
 import shutil
 from urllib.parse import unquote, urlparse
+from warnings import warn
 import yaml
 from taskcluster.client import createTemporaryCredentials
 from scriptworker.exceptions import DownloadError, ScriptWorkerException, ScriptWorkerRetryException, ScriptWorkerTaskException
@@ -318,6 +319,8 @@ async def raise_future_exceptions(tasks):
             the task was cancelled
 
     """
+    warn("raise_future_exceptions(..) is deprecated, use asyncio.gather(..) instead",
+         DeprecationWarning, stacklevel=2)
     succeeded_results, _ = await _process_future_exceptions(tasks, raise_at_first_error=True)
     return succeeded_results
 
@@ -339,6 +342,9 @@ async def get_results_and_future_exceptions(tasks):
         tuple: the list of results from the futures, then the list of exceptions.
 
     """
+    warn("get_results_and_future_exceptions(..) is deprecated, "
+         "use asyncio.gather(.., return_exceptions=True) instead",
+         DeprecationWarning, stacklevel=2)
     return await _process_future_exceptions(tasks, raise_at_first_error=False)
 
 
