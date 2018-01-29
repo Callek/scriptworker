@@ -17,7 +17,7 @@ from urllib.parse import unquote, urljoin
 from scriptworker.client import validate_artifact_url
 from scriptworker.exceptions import ScriptWorkerRetryException, ScriptWorkerTaskException
 from scriptworker.task import get_task_id, get_run_id, get_decision_task_id
-from scriptworker.utils import download_file, filepaths_in_dir, raise_future_exceptions, retry_async, add_enumerable_item_to_dict
+from scriptworker.utils import download_file, filepaths_in_dir, retry_async, add_enumerable_item_to_dict
 
 
 log = logging.getLogger(__name__)
@@ -83,7 +83,7 @@ async def upload_artifacts(context):
                 )
             )
         )
-    await raise_future_exceptions(tasks)
+    await asyncio.gather(*tasks)
 
 
 def compress_artifact_if_supported(artifact_path):
@@ -314,7 +314,7 @@ async def download_artifacts(context, file_urls, parent_dir=None, session=None,
             )
         )
 
-    await raise_future_exceptions(tasks)
+    await asyncio.gather(*tasks)
     return files
 
 

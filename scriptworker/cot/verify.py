@@ -59,7 +59,6 @@ from scriptworker.utils import (
     makedirs,
     match_url_path_callback,
     match_url_regex,
-    raise_future_exceptions,
     remove_empty_keys,
     rm,
 )
@@ -644,10 +643,14 @@ async def download_cot(chain):
         else:
             optional_artifact_tasks.append(coroutine)
 
-    mandatory_artifacts_paths = await raise_future_exceptions(mandatory_artifact_tasks)
-    succeeded_optional_artifacts_paths, failed_optional_artifacts = \
-        await get_results_and_future_exceptions(optional_artifact_tasks)
+    mandatory_artifacts_paths = await asyncio.gather(*mandatory_artifact_tasks)
+    optional_artifacts_paths = await asyncio.gather(*optional_artifact_tasks,
+                                                    return_exceptions=True)
 
+    failed_optional_artifacts = [artifact for artifact in optional_artifacts_paths
+                                 if isinstance(artifact, Exception)]
+    succeeded_optional_artifacts_paths = [artifact for artifact in optional_artifacts_paths
+                                          if not isinstance(artifact, Exception)]
     if failed_optional_artifacts:
         error_messages = '\n'.join([' * {}'.format(failure) for failure in failed_optional_artifacts])
         log.warn('Could not download {} "chainOfTrust.json.asc". Although, they were not needed by \
@@ -732,9 +735,14 @@ async def download_cot_artifacts(chain):
             else:
                 mandatory_artifact_tasks.append(coroutine)
 
-    mandatory_artifacts_paths = await raise_future_exceptions(mandatory_artifact_tasks)
-    succeeded_optional_artifacts_paths, failed_optional_artifacts = \
-        await get_results_and_future_exceptions(optional_artifact_tasks)
+    mandatory_artifacts_paths = await asyncio.gather(*mandatory_artifact_tasks)
+    optional_artifacts_paths = await asyncio.gather(*optional_artifact_tasks,
+                                                    return_exceptions=True)
+
+    failed_optional_artifacts = [artifact for artifact in optional_artifacts_paths
+                                 if isinstance(artifact, Exception)]
+    succeeded_optional_artifacts_paths = [artifact for artifact in optional_artifacts_paths
+                                          if not isinstance(artifact, Exception)]
 
     if failed_optional_artifacts:
         log.warn('Could not download {} artifacts: {}'.format(len(failed_optional_artifacts), failed_optional_artifacts))

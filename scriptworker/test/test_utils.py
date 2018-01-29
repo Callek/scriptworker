@@ -233,17 +233,17 @@ def test_raise_future_exceptions(event_loop, exc):
     if exc is not None:
         with pytest.raises(exc):
             event_loop.run_until_complete(
-                utils.raise_future_exceptions(tasks)
+                pytest.deprecated_call(utils.raise_future_exceptions(tasks))
             )
     else:
         event_loop.run_until_complete(
-            utils.raise_future_exceptions(tasks)
+            pytest.deprecated_call(utils.raise_future_exceptions(tasks))
         )
 
 
 def test_raise_future_exceptions_noop(event_loop):
     event_loop.run_until_complete(
-        utils.raise_future_exceptions([])
+        pytest.deprecated_call(utils.raise_future_exceptions([]))
     )
 
 
@@ -261,7 +261,8 @@ async def test_get_results_and_future_exceptions(exc):
 
     tasks = [asyncio.ensure_future(one()), asyncio.ensure_future(two())]
 
-    passed_results, error_results = await utils.get_results_and_future_exceptions(tasks)
+    passed_results, error_results = await pytest.deprecated_call(
+        utils.get_results_and_future_exceptions(tasks))
     if exc is None:
         assert passed_results == ['passed1', 'passed2']
         assert error_results == []
