@@ -162,25 +162,25 @@ def unsuccessful_queue():
 
 
 @pytest.fixture(scope='function')
-def fake_session(event_loop):
+async def fake_session(event_loop):
     @asyncio.coroutine
     def _fake_request(method, url, *args, **kwargs):
         return FakeResponse(method, url)
 
-    session = aiohttp.ClientSession()
-    session._request = _fake_request
-    return session
+    async with aiohttp.ClientSession() as session:
+        session._request = _fake_request
+        return session
 
 
 @pytest.fixture(scope='function')
-def fake_session_500(event_loop):
+async def fake_session_500(event_loop):
     @asyncio.coroutine
     def _fake_request(method, url, *args, **kwargs):
         return FakeResponse(method, url, status=500)
 
-    session = aiohttp.ClientSession()
-    session._request = _fake_request
-    return session
+    async with aiohttp.ClientSession() as session:
+        session._request = _fake_request
+        return session
 
 
 def integration_create_task_payload(config, task_group_id, scopes=None,
