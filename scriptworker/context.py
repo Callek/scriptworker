@@ -96,6 +96,8 @@ class Context(object):
 
         """
         if self._credentials:
+            if not self.queue:
+                self.queue = self.create_queue(self._credentials)
             return dict(deepcopy(self._credentials))
 
     @credentials.setter
@@ -112,9 +114,10 @@ class Context(object):
 
         """
         if credentials:
-            return Queue({
-                'credentials': credentials,
-            }, session=self.session)
+            if self.session:
+                return Queue({
+                    'credentials': credentials,
+                }, session=self.session)
 
     @property
     def reclaim_task(self):
