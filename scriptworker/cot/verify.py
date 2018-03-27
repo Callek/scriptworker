@@ -474,7 +474,7 @@ def verify_docker_image_sha(chain, link):
     errors = []
 
     if not cot:
-        log.warn('Chain of Trust for {} does not exist. See above log for more details. \
+        log.warning('Chain of Trust for {} does not exist. See above log for more details. \
 Skipping docker image sha verification'.format(task['taskId']))
         return
 
@@ -653,7 +653,7 @@ async def download_cot(chain):
 
     if failed_optional_artifacts:
         error_messages = '\n'.join([' * {}'.format(failure) for failure in failed_optional_artifacts])
-        log.warn('Could not download {} "chainOfTrust.json.asc". Although, they were not needed by \
+        log.warning('Could not download {} "chainOfTrust.json.asc". Although, they were not needed by \
 any mandatory artifact. Continuing CoT verifications. Errors gotten: {}'.format(len(failed_optional_artifacts), error_messages))
 
     paths = mandatory_artifacts_paths + succeeded_optional_artifacts_paths
@@ -681,7 +681,7 @@ async def download_cot_artifact(chain, task_id, path):
     link = chain.get_link(task_id)
     log.debug("Verifying {} is in {} cot artifacts...".format(path, task_id))
     if not link.cot:
-        log.warn('Chain of Trust for "{}" in {} does not exist. See above log for more details. \
+        log.warning('Chain of Trust for "{}" in {} does not exist. See above log for more details. \
 Skipping download of this artifact'.format(path, task_id))
         return
 
@@ -741,7 +741,7 @@ async def download_cot_artifacts(chain):
         await get_results_and_future_exceptions(optional_artifact_tasks)
 
     if failed_optional_artifacts:
-        log.warn('Could not download {} artifacts: {}'.format(len(failed_optional_artifacts), failed_optional_artifacts))
+        log.warning('Could not download {} artifacts: {}'.format(len(failed_optional_artifacts), failed_optional_artifacts))
 
     return mandatory_artifacts_paths + succeeded_optional_artifacts_paths
 
@@ -846,7 +846,7 @@ def verify_cot_signatures(chain):
             if is_task_required_by_any_mandatory_artifact(chain, link.task_id):
                 raise CoTError("Can't read mandatory {}: {}!".format(path, str(exc)))
             else:
-                log.warn("Could not read optional {}. Continuing. Error gotten: {}!".format(path, str(exc)))
+                log.warning("Could not read optional {}. Continuing. Error gotten: {}!".format(path, str(exc)))
                 continue
         try:
             body = get_body(

@@ -357,7 +357,7 @@ async def _process_future_exceptions(tasks, raise_at_first_error):
                 if raise_at_first_error:
                     raise exc
                 else:
-                    log.warn('Async task failed with error: {}'.format(exc))
+                    log.warning('Async task failed with error: {}'.format(exc))
                     error_results.append(exc)
 
     return succeeded_results, error_results
