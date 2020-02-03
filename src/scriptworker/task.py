@@ -14,6 +14,7 @@ import pprint
 import re
 from asyncio.subprocess import PIPE
 from copy import deepcopy
+from typing import Any, Dict, cast
 
 import aiohttp
 import taskcluster
@@ -52,7 +53,7 @@ def worst_level(level1, level2):
 
 
 # get_task_id {{{1
-def get_task_id(claim_task):
+def get_task_id(claim_task: Dict[str, Any]) -> str:
     """Given a claim_task json dict, return the taskId.
 
     Args:
@@ -62,11 +63,11 @@ def get_task_id(claim_task):
         str: the taskId.
 
     """
-    return claim_task["status"]["taskId"]
+    return cast(str, claim_task["status"]["taskId"])
 
 
 # get_run_id {{{1
-def get_run_id(claim_task):
+def get_run_id(claim_task: Dict[str, Any]) -> int:
     """Given a claim_task json dict, return the runId.
 
     Args:
@@ -76,7 +77,7 @@ def get_run_id(claim_task):
         int: the runId.
 
     """
-    return claim_task["runId"]
+    return cast(int, claim_task["runId"])
 
 
 # get_action_callback_name {{{1
@@ -109,7 +110,7 @@ def get_commit_message(task):
 
 
 # get_decision_task_id {{{1
-def get_decision_task_id(task):
+def get_decision_task_id(task: Dict[str, Any]) -> str:
     """Given a task dict, return the decision taskId.
 
     By convention, the decision task of the ``taskId`` is the task's ``taskGroupId``.
@@ -121,7 +122,7 @@ def get_decision_task_id(task):
         str: the taskId of the decision task.
 
     """
-    return task["taskGroupId"]
+    return cast(str, task["taskGroupId"])
 
 
 # get_parent_task_id {{{1
@@ -574,9 +575,11 @@ async def run_task(context, to_cancellable_process):
     """
     env = deepcopy(os.environ)
     env["TASK_ID"] = context.task_id or "None"
-    kwargs = {"stdout": PIPE, "stderr": PIPE, "stdin": None, "close_fds": True, "preexec_fn": lambda: os.setsid(), "env": env}  # pragma: no branch
 
-    subprocess = await asyncio.create_subprocess_exec(*context.config["task_script"], **kwargs)
+    subprocess = await asyncio.create_subprocess_exec(
+        *context.config["task_script"], stdout=PIPE, stderr=PIPE, stdin=None, close_fds=True, preexec_fn=lambda: os.setsid(), env=env,
+    )
+
     context.proc = await to_cancellable_process(TaskProcess(subprocess))
     timeout = context.config["task_max_timeout"]
 

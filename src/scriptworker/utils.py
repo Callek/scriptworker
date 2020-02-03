@@ -16,7 +16,7 @@ import re
 import shutil
 import time
 from copy import deepcopy
-from typing import IO, Any, Awaitable, Callable, Dict, Match, Optional, Sequence, Tuple, Type, Union, cast, overload
+from typing import IO, Any, Awaitable, Callable, Dict, List, Match, Optional, Sequence, Tuple, Type, Union, cast, overload
 from urllib.parse import unquote, urlparse
 
 import aiohttp
@@ -376,7 +376,7 @@ def create_temp_creds(client_id, access_token, start=None, expires=None, scopes=
 
 
 # raise_future_exceptions {{{1
-async def raise_future_exceptions(tasks):
+async def raise_future_exceptions(tasks: Sequence[Any]) -> Any:
     """Given a list of futures, await them, then raise their exceptions if any.
 
     Without something like this, a bare::
@@ -419,7 +419,7 @@ async def get_results_and_future_exceptions(tasks):
     return await _process_future_exceptions(tasks, raise_at_first_error=False)
 
 
-async def _process_future_exceptions(tasks, raise_at_first_error):
+async def _process_future_exceptions(tasks: Sequence[Any], raise_at_first_error: bool) -> Tuple[List[Any], List[Any]]:
     succeeded_results = []
     error_results = []
 
@@ -670,7 +670,7 @@ async def download_file(context, url, abs_filename, session=None, chunk_size=128
 
 
 # get_loggable_url {{{1
-def get_loggable_url(url):
+def get_loggable_url(url: str) -> str:
     """Strip out secrets from taskcluster urls.
 
     Args:
@@ -797,7 +797,7 @@ def match_url_regex(rules: Tuple[Any], url: str, callback: Callable[[Match[str]]
 
 
 # add_enumerable_item_to_dict {{{1
-def add_enumerable_item_to_dict(dict_, key, item):
+def add_enumerable_item_to_dict(dict_: Dict[str, Any], key: str, item: Sequence[Any]) -> None:
     """Add an item to a list contained in a dict.
 
     For example: If the dict is ``{'some_key': ['an_item']}``, then calling this function

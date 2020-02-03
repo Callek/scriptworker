@@ -14,7 +14,7 @@ import logging
 import os
 import sys
 from asyncio import AbstractEventLoop
-from typing import Any, Awaitable, Callable, Dict, List, Match, NoReturn, Optional, Tuple
+from typing import Any, Awaitable, Callable, Dict, Match, NoReturn, Optional, Sequence, Tuple
 from urllib.parse import unquote
 
 import aiohttp
@@ -94,7 +94,7 @@ def validate_task_schema(context: Any, schema_key: str = "schema_file") -> None:
         raise TaskVerificationError("Cannot validate task against schema. Task: {}.".format(context.task)) from e
 
 
-def validate_artifact_url(valid_artifact_rules: Tuple[Any], valid_artifact_task_ids: List[str], url: str) -> str:
+def validate_artifact_url(valid_artifact_rules: Tuple[Any], valid_artifact_task_ids: Sequence[str], url: str) -> str:
     """Ensure a URL fits in given scheme, netloc, and path restrictions.
 
     If we fail any checks, raise a ScriptWorkerTaskException with

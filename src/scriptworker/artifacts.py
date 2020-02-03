@@ -10,6 +10,7 @@ import logging
 import mimetypes
 import os
 from pathlib import Path
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Sequence, Tuple, Union
 
 import aiohttp
 import arrow
@@ -39,7 +40,7 @@ _EXTENSION_TO_MIME_TYPE = {
 }
 
 
-async def upload_artifacts(context, files):
+async def upload_artifacts(context: Any, files: Sequence[str]) -> None:
     """Compress and upload the requested files from ``artifact_dir``, preserving relative paths.
 
     Compression only occurs with files known to be supported.
@@ -57,7 +58,7 @@ async def upload_artifacts(context, files):
 
     """
 
-    def to_upload_future(target_path):
+    def to_upload_future(target_path: str) -> asyncio.futures.Future[None]:
         path = os.path.join(context.config["artifact_dir"], target_path)
         content_type, content_encoding = compress_artifact_if_supported(path)
         return asyncio.ensure_future(
@@ -68,7 +69,7 @@ async def upload_artifacts(context, files):
     await raise_future_exceptions(tasks)
 
 
-def compress_artifact_if_supported(artifact_path):
+def compress_artifact_if_supported(artifact_path: str) -> Tuple[str, Optional[str]]:
     """Compress artifacts with GZip if they're known to be supported.
 
     This replaces the artifact given by a gzip binary.
@@ -99,7 +100,7 @@ def compress_artifact_if_supported(artifact_path):
     return content_type, encoding
 
 
-def guess_content_type_and_encoding(path):
+def guess_content_type_and_encoding(path: str) -> Tuple[str, Optional[str]]:
     """Guess the content type of a path, using ``mimetypes``.
 
     Falls back to "application/binary" if no content type is found.
@@ -111,9 +112,10 @@ def guess_content_type_and_encoding(path):
         str: the content type of the file
 
     """
-    for ext, content_type in _EXTENSION_TO_MIME_TYPE.items():
+    mapped_type: Union[str, Tuple[str, Optional[str]]]
+    for ext, mapped_type in _EXTENSION_TO_MIME_TYPE.items():
         if path.endswith(ext):
-            return content_type
+            return mapped_type
 
     content_type, encoding = mimetypes.guess_type(path)
     content_type = content_type or "application/binary"
@@ -121,7 +123,7 @@ def guess_content_type_and_encoding(path):
 
 
 # retry_create_artifact {{{1
-async def retry_create_artifact(*args, **kwargs):
+async def retry_create_artifact(*args: Any, **kwargs: Any) -> None:
     """Retry create_artifact() calls.
 
     Args:
@@ -133,7 +135,9 @@ async def retry_create_artifact(*args, **kwargs):
 
 
 # create_artifact {{{1
-async def create_artifact(context, path, target_path, content_type, content_encoding, storage_type="s3", expires=None):
+async def create_artifact(
+    context: Any, path: str, target_path: str, content_type: str, content_encoding: str, storage_type: str = "s3", expires: Optional[str] = None
+) -> None:
     """Create an artifact and upload it.
 
     This should support s3 and azure out of the box; we'll need some tweaking
@@ -179,9 +183,9 @@ async def create_artifact(context, path, target_path, content_type, content_enco
                     raise ScriptWorkerRetryException("Bad status {}".format(resp.status))
 
 
-def _craft_artifact_put_headers(content_type, encoding=None):
+def _craft_artifact_put_headers(content_type: str, encoding: Optional[str] = None) -> Dict[str, str]:
     log.debug("{} {}".format(content_type, encoding))
-    headers = {aiohttp.hdrs.CONTENT_TYPE: content_type}
+    headers: Dict[str, str] = {aiohttp.hdrs.CONTENT_TYPE: content_type}
 
     if encoding is not None:
         headers[aiohttp.hdrs.CONTENT_ENCODING] = encoding
@@ -190,7 +194,7 @@ def _craft_artifact_put_headers(content_type, encoding=None):
 
 
 # get_artifact_url {{{1
-def get_artifact_url(context, task_id, path):
+def get_artifact_url(context: Any, task_id: str, path: str) -> str:
     """Get a TaskCluster artifact url.
 
     Args:
@@ -206,7 +210,7 @@ def get_artifact_url(context, task_id, path):
 
     """
     if path.startswith("public/"):
-        url = context.queue.buildUrl("getLatestArtifact", task_id, path)
+        url: str = context.queue.buildUrl("getLatestArtifact", task_id, path)
     else:
         url = context.queue.buildSignedUrl(
             "getLatestArtifact",
@@ -220,7 +224,7 @@ def get_artifact_url(context, task_id, path):
 
 
 # get_expiration_arrow {{{1
-def get_expiration_arrow(context):
+def get_expiration_arrow(context: Any) -> Any:
     """Return an arrow matching `context.task['expires']`.
 
     Args:
@@ -234,7 +238,14 @@ def get_expiration_arrow(context):
 
 
 # download_artifacts {{{1
-async def download_artifacts(context, file_urls, parent_dir=None, session=None, download_func=download_file, valid_artifact_task_ids=None):
+async def download_artifacts(
+    context: Any,
+    file_urls: Sequence[str],
+    parent_dir: Optional[str] = None,
+    session: Optional[aiohttp.client.ClientSession] = None,
+    download_func: Callable[..., Awaitable[None]] = download_file,
+    valid_artifact_task_ids: Optional[Sequence[str]] = None,
+) -> List[str]:
     """Download artifacts in parallel after validating their URLs.
 
     Valid ``taskId``s for download include the task's dependencies and the
@@ -289,7 +300,7 @@ async def download_artifacts(context, file_urls, parent_dir=None, session=None, 
     return files
 
 
-def get_upstream_artifacts_full_paths_per_task_id(context):
+def get_upstream_artifacts_full_paths_per_task_id(context: Any) -> Tuple[Dict[str, Sequence[str]], Dict[str, Sequence[str]]]:
     """List the downloaded upstream artifacts.
 
     Args:
@@ -304,13 +315,13 @@ def get_upstream_artifacts_full_paths_per_task_id(context):
         scriptworker.exceptions.ScriptWorkerTaskException: when an artifact doesn't exist.
 
     """
-    upstream_artifacts = context.task["payload"]["upstreamArtifacts"]
+    upstream_artifacts = context.task["payload"]["upstreamArtifacts"]  # type: Sequence[Dict[str, Any]]
     task_ids_and_relative_paths = [(artifact_definition["taskId"], artifact_definition["paths"]) for artifact_definition in upstream_artifacts]
 
     optional_artifacts_per_task_id = get_optional_artifacts_per_task_id(upstream_artifacts)
 
-    upstream_artifacts_full_paths_per_task_id = {}
-    failed_paths_per_task_id = {}
+    upstream_artifacts_full_paths_per_task_id = {}  # type: Dict[str, Sequence[str]]
+    failed_paths_per_task_id = {}  # type: Dict[str, Sequence[str]]
     for task_id, paths in task_ids_and_relative_paths:
         for path in paths:
             try:
@@ -326,7 +337,7 @@ def get_upstream_artifacts_full_paths_per_task_id(context):
     return upstream_artifacts_full_paths_per_task_id, failed_paths_per_task_id
 
 
-def get_and_check_single_upstream_artifact_full_path(context, task_id, path):
+def get_and_check_single_upstream_artifact_full_path(context: Any, task_id: str, path: str) -> str:
     """Return the full path where an upstream artifact is located on disk.
 
     Args:
@@ -348,7 +359,7 @@ def get_and_check_single_upstream_artifact_full_path(context, task_id, path):
     return abs_path
 
 
-def get_single_upstream_artifact_full_path(context, task_id, path):
+def get_single_upstream_artifact_full_path(context: Any, task_id: str, path: str) -> str:
     """Return the full path where an upstream artifact should be located.
 
     Artifact may not exist. If you want to be sure if does, use
@@ -371,7 +382,7 @@ def get_single_upstream_artifact_full_path(context, task_id, path):
     return full_path
 
 
-def get_optional_artifacts_per_task_id(upstream_artifacts):
+def get_optional_artifacts_per_task_id(upstream_artifacts: Sequence[Dict[str, Any]]) -> Dict[str, Sequence[str]]:
     """Return every optional artifact defined in ``upstream_artifacts``, ordered by taskId.
 
     Args:
@@ -383,7 +394,7 @@ def get_optional_artifacts_per_task_id(upstream_artifacts):
     """
     # A given taskId might be defined many times in upstreamArtifacts. Thus, we can't
     # use a dict comprehension
-    optional_artifacts_per_task_id = {}
+    optional_artifacts_per_task_id = {}  # type: Dict[str, Sequence[str]]
 
     for artifact_definition in upstream_artifacts:
         if artifact_definition.get("optional", False) is True:
@@ -395,7 +406,7 @@ def get_optional_artifacts_per_task_id(upstream_artifacts):
     return optional_artifacts_per_task_id
 
 
-def assert_is_parent(path, parent_dir):
+def assert_is_parent(path: str, parent_dir: str) -> None:
     """Raise ``ScriptworkerTaskException`` if ``path`` is not under ``parent_dir``.
 
     Args:
